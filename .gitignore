@@ -140,4 +140,5 @@ cython_debug/
 # Custom
 tags
 .api_key
+._api_key
 notes.txt

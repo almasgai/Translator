@@ -2,13 +2,12 @@ from time import sleep
 
 from gpiozero import Button, PWMLED
 import hyper
-from googletrans import Translator
 import speech_recognition as sr
 from speech_recognition import Recognizer, Microphone
 
 
 class Listener:
-    def __init__(self, pin: int = 14, language: str = "en") -> None:
+    def __init__(self, pin: int = 14, language: str = "en", api: str = "") -> None:
         """
         Initialize LED lights, button, language, microphone, and recognizer.
 
@@ -28,7 +27,7 @@ class Listener:
         self.recognizer = Recognizer()
         self.src = language
         self.target = "es"
-        self.key = ""
+        self.api = api or None
 
     def breathe(
         self, step: float = 0.0001, iterations: int = 2, rest: float = 0.5
@@ -103,13 +102,26 @@ class Listener:
             self.recognizer.adjust_for_ambient_noise(source)
             audio = self.recognizer.listen(source)
 
-        text = self.recognizer.recognize_google(audio)
+        # If Google cloud API is explicitly given, use that. (Gives users
+        # control over logging or not)
+        if self.api:
+            try:
+                text = self.recognizer.recognize_google_cloud(audio, self.api)
+            except ValueError as e:
+                print(e)
+                text = self.recognizer.recognize_google(audio, self.api)
+        # Otherwise use Google Web API
+        else:
+            text = self.recognizer.recognize_google(audio, self.api)
+
         text = "".join([char for char in text if char.isalnum() or char.isspace()])
 
+        # Change language to translate into
         if text.startswith("Set target to"):
             self.target(self, text.split("")[-1])
             return
 
+        # Change input language (translate 'set source to')
         if text.startswith("Set source to"):
             self.source(self, text.split("")[-1])
             return
