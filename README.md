@@ -1,5 +1,5 @@
 # Universal Translator for the Price of Lunch
-###### Translate your voice with ease
+Translate your voice with ease
 
 # Usage
 Have Pi boot up you will know the device is ready when
