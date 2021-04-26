@@ -1,4 +1,4 @@
-f = open('.api_key')
+f = open(".api_key")
 
 api_key = "".join([char for char in f.read() if char.isalnum()])
 

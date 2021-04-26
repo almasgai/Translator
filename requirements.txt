@@ -1,8 +1,7 @@
+pyaudio
 gpiozero
 google-cloud-speech
 h2==3.*
 hyper
 SpeechRecognition
 googletrans
-pyaudio
-pocketsphinx

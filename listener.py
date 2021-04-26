@@ -7,7 +7,9 @@ from speech_recognition import Recognizer, Microphone
 
 
 class Listener:
-    def __init__(self, pin: int = 14, language: str = "en", api: str = "") -> None:
+    def __init__(
+        self, pin: int = 17, language: str = "en", api: str = "", mic=None
+    ) -> None:
         """
         Initialize LED lights, button, language, microphone, and recognizer.
 
@@ -16,18 +18,25 @@ class Listener:
         language: set language to the language you are translating from
         microphone: initialize microphone so it can be used in this program
         recognizer: take input from microphone and decipher it into text
+
+        Microphone.list_microphone_names() to list all microphones
+        Pass the needed device as device_index=n if program can't pick
+        up device automatically
         """
-
-        self.led = PWMLED(pin)
-
-        # Microphone.list_microphone_names() to list all microphones
-        # Pass the needed device as device_index=n if program can't pick
-        # up device automatically
-        self.microphone = Microphone()
+        self.microphone = Microphone(device_index=mic) if mic else Listener.get_mic()
         self.recognizer = Recognizer()
+        self.led = PWMLED(pin)
         self.src = language
         self.target = "es"
-        self.api = api or None
+        self.api = api
+
+    @staticmethod
+    def get_mic():
+        for index, mic in enumerate(Microphone.list_microphone_names()):
+            if "usb" in mic.lower():
+                return Microphone(device_index=index)
+
+        raise ValueError("USB microphone required to run.")
 
     def breathe(
         self, step: float = 0.0001, iterations: int = 2, rest: float = 0.5
@@ -98,49 +107,33 @@ class Listener:
     def listen(self) -> None:
         """Read in voice and send it to Google. Once Google transcribes it, sanitize the result."""
 
+        print("Listening to user voice now...")
+
         with self.microphone as source:
             self.recognizer.adjust_for_ambient_noise(source)
             audio = self.recognizer.listen(source)
 
+        print("Now trying to interpret user voice")
+
         # If Google cloud API is explicitly given, use that. (Gives users
         # control over logging or not)
         if self.api:
-            try:
-                text = self.recognizer.recognize_google_cloud(audio, self.api)
-            except ValueError as e:
-                print(e)
-                text = self.recognizer.recognize_google(audio, self.api)
+            text = self.recognizer.recognize_google_cloud(audio, self.api)
         # Otherwise use Google Web API
         else:
-            text = self.recognizer.recognize_google(audio, self.api)
+            text = self.recognizer.recognize_google(audio)
 
-        text = "".join([char for char in text if char.isalnum() or char.isspace()])
+        print("Sanitizing transciption")
+        # This may be unnecessary
+        # text = "".join([char for char in text if char.isalnum() or char.isspace()])
 
-        # Change language to translate into
-        if text.startswith("Set target to"):
-            self.target(self, text.split("")[-1])
-            return
-
-        # Change input language (translate 'set source to')
-        if text.startswith("Set source to"):
-            self.source(self, text.split("")[-1])
-            return
-
-        # Now take the perceived audio and do something with it
-        try:
-            print(f"Google thinks you said:\n{text}")
-        except sr.UnknownValueError:
-            print(f"Google Speech could not understand audio")
-        except sr.RequestError as e:
-            print(
-                f"Could not request results from Google Speech Recognition services: {e}"
-            )
+        print("Returning transcription back to main.py")
 
         return text
 
     def set_brightness(self, target: float, increase: bool, step: float = 0.001):
         """
-        Set the brightness to LED. Brightness can go either way: up (starting 
+        Set the brightness to LED. Brightness can go either way: up (starting
         at zero) or down (starting at one) and 'work' it's way into the desired
         target brightness.
         """
@@ -168,10 +161,14 @@ class Listener:
         try:
             self.src = googletrans.LANGUAGES[new_lang]
         except IndexError as e:
-            print(f"Error: Unable to find language\n{e}")
+            print(
+                f"Error: Unable to find language.Keeping current source language to {self.src}.\n{e}"
+            )
 
     def set_target(self, new_lang: str) -> None:
         try:
             self.target = googletrans.LANGUAGES[new_lang]
         except IndexError as e:
-            print(f"Error: Unable to find language\n{e}")
+            print(
+                f"Error: Unable to find language. Keeping current target language to {self.target}.\n{e}"
+            )
