@@ -15,12 +15,12 @@ The program will continuously loop until you say either 'exit'
 or 'turn off'. 
 
 # Parts
-- [Raspberry Pi]()
-- [Lipo Battery]()
-- [Microphone]() (Make sure it is a USB microphone, the headphone jack is output only)
-- [LEDs]()
-- [Micro SD Card (8GB+)]()
-- Optional: a 3D printer ([mine]()) although you can just have an online 
+- Raspberry Pi
+- Lipo Battery
+- Microphone (Make sure it is a USB microphone, the headphone jack is output only)
+- LEDs
+- Micro SD Card (8GB+)
+- Optional: a 3D printer (for case) although you can just have an online 
 service print out the STL
 
 ### Supported Languages
